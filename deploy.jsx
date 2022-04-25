@@ -11,10 +11,11 @@ function App() {
   return (
     <html>
       <head>
-        <title>Hello from JSX</title>
+        <title>Cheeper</title>
       </head>
       <body>
-        <h1>Hello world</h1>
+        <h1>Cheep Cheep</h1>
+        <p>Welcome to the Roost!</p>
       </body>
     </html>
   );
