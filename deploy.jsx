@@ -3,8 +3,6 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.asynciterable" />
 /// <reference lib="deno.ns" />
-import { serve } from "https://deno.land/std@0.133.0/http/server.ts";
-import { router } from "https://crux.land/router@0.0.11";
 import { h, ssr } from "https://crux.land/nanossr@0.0.4";
 
 import "https://deno.land/x/xhr@0.1.2/mod.ts";
@@ -30,33 +28,40 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
+// Oak
+import {
+  Application,
+  Router,
+  Status,
+} from "https://deno.land/x/oak@v7.7.0/mod.ts";
+
 const render = (component) => ssr(() => <App>{component}</App>);
 installGlobals();
 
 const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"));
-console.log(firebaseConfig);
 const firebaseApp = initializeApp(firebaseConfig, "example");
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 
 const users = new Map();
 
-serve(
-  router(
-    {
-      "/": () => render(<Feed />),
-      "/cheeps": async () => {
-        const cheepsCol = collection(db, "cheeps");
-        const querySnapshot = await getDocs(cheepsCol);
-        new Response({
-          body: querySnapshot.docs.map((doc) => doc.data()),
-          type: "json",
-        });
-      },
-    },
-    () => render(<NotFound />)
-  )
-);
+const app = new Application();
+const router = new Router();
+
+app.use(virtualStorage());
+
+router.get("/", (ctx) => {
+  ctx.response.body = render(<Feed />).body;
+  ctx.response.type = "text/html";
+});
+
+router.get("/(.*)", (ctx) => {
+  ctx.response.body = render(<NotFound />).body;
+  ctx.response.type = "text/html";
+});
+
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 function App({ children }) {
   return (
@@ -113,3 +118,5 @@ function NotFound() {
     </div>
   );
 }
+
+await app.listen({ port: 8000 });
