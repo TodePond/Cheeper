@@ -78,6 +78,7 @@ router.post("/cheep", async (ctx) => {
     ctx.throw(Status.BadRequest, "Must be a JSON document");
   }
   const cheep = await body.value;
+  console.log(cheep);
   if (!isCheep(cheep)) {
     ctx.throw(Status.BadRequest, "Cheep was not well formed");
   }
@@ -115,6 +116,20 @@ app.use(async (ctx, next) => {
 
 app.use(router.routes());
 app.use(router.allowedMethods());
+
+/*
+
+const sendCheep = async () => {
+    const req = new XMLHttpRequest()
+    req.open("POST", "http://localhost:8000/cheep")
+    req.setRequestHeader("Content-Type", "application/json")
+    req.send('{"text": "Cheeeeeep", "id": "0"}')
+    req.addEventListener("load", function() {
+        console.log(this)
+    })
+}
+
+*/
 
 function App({ children }) {
   return (
