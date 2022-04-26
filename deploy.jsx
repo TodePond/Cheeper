@@ -35,7 +35,8 @@ import {
   Status,
 } from "https://deno.land/x/oak@v7.7.0/mod.ts";
 
-const render = (component) => ssr(() => <App>{component}</App>);
+const render = (component, loggedIn) =>
+  ssr(() => <App loggedIn={loggedIn}>{component}</App>);
 installGlobals();
 
 const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"));
@@ -48,10 +49,8 @@ const users = new Map();
 const router = new Router();
 
 router.get("/", (ctx) => {
-  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
-  const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
-  const isLoggedIn = signedInUid && signedInUser && auth.currentUser;
-  ctx.response.body = render(Feed(isLoggedIn)).body;
+  const loggedIn = isLoggedIn(ctx);
+  ctx.response.body = render(<Feed loggedIn={loggedIn} />, loggedIn).body;
   ctx.response.type = "text/html";
 });
 
@@ -67,13 +66,19 @@ router.get("/cheeps", async (ctx) => {
   }
 });
 
-function isCheep(value) {
+const isCheep = (value) => {
   if (typeof value !== "object") return false;
   if (value === null) return false;
   if (!("id" in value)) return false;
   if (!("text" in value)) return false;
   return true;
-}
+};
+
+const isLoggedIn = (ctx) => {
+  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
+  const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
+  return signedInUid && signedInUser && auth.currentUser;
+};
 
 router.post("/cheep", async (ctx) => {
   const body = ctx.request.body();
@@ -90,8 +95,15 @@ router.post("/cheep", async (ctx) => {
 });
 
 router.get("/login", async (ctx) => {
-  ctx.response.body = render(<Login></Login>).body;
+  ctx.response.body = render(<Login></Login>, isLoggedIn(ctx)).body;
   ctx.response.type = "text/html";
+});
+
+router.get("/logout", async (ctx) => {
+  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
+  users.delete(signedInUid);
+  ctx.cookies.delete("LOGGED_IN_UID");
+  ctx.response.redirect("/");
 });
 
 router.post("/login", async (ctx) => {
@@ -143,16 +155,17 @@ const sendCheep = async () => {
 
 */
 
-function App({ children }) {
+const App = (args) => {
+  const { loggedIn, children } = args;
   return (
     <div class="min-h-screen">
-      <NavBar />
+      <NavBar loggedIn={loggedIn} />
       {children}
     </div>
   );
-}
+};
 
-function NavBar() {
+const NavBar = ({ loggedIn }) => {
   return (
     <nav class="font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-4 px-6 bg-white shadow sm:items-baseline w-full">
       <div class="mb-2 sm:mb-0">
@@ -160,24 +173,37 @@ function NavBar() {
           Cheeper
         </a>
       </div>
+      {loggedIn ? (
+        <div class="mb-2 sm:mb-0">
+          <a href="/logout" class="text-2xl no-underline hover:text-indigo-800">
+            Logout
+          </a>
+        </div>
+      ) : (
+        <div class="mb-2 sm:mb-0">
+          <a href="/login" class="text-2xl no-underline hover:text-indigo-800">
+            Login
+          </a>
+        </div>
+      )}
     </nav>
   );
-}
+};
 
-const Feed = (isLoggedIn) => () => {
+function Feed({ loggedIn }) {
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
           <span class="block">Cheep Cheep</span>
           <span class="block text-indigo-600">
-            Welcome {isLoggedIn ? "back " : ""}to the Roost!
+            Welcome {loggedIn ? "back " : ""}to the Roost!
           </span>
         </h2>
       </div>
     </div>
   );
-};
+}
 
 function Login() {
   return (
