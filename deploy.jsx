@@ -48,7 +48,10 @@ const users = new Map();
 const router = new Router();
 
 router.get("/", (ctx) => {
-  ctx.response.body = render(<Feed />).body;
+  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
+  const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
+  const loginned = signedInUid && signedInUser && auth.currentUser;
+  ctx.response.body = render(<Feed>{loginned}</Feed>).body;
   ctx.response.type = "text/html";
 });
 
@@ -84,6 +87,16 @@ router.post("/cheep", async (ctx) => {
   }
   addDoc(collection(db, "cheeps"), cheep);
   ctx.response.status = Status.NoContent;
+});
+
+router.get("/login", async (ctx) => {
+  ctx.response.body = render(<Login></Login>).body;
+  ctx.response.type = "text/html";
+});
+
+router.post("/login", async (ctx) => {
+  const value = await ctx.request.body().value;
+  console.log(value);
 });
 
 router.get("/(.*)", (ctx) => {
@@ -152,14 +165,54 @@ function NavBar() {
   );
 }
 
-function Feed() {
+function Feed(loginned) {
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
           <span class="block">Cheep Cheep</span>
-          <span class="block text-indigo-600">Welcome to the Roost!</span>
+          <span class="block text-indigo-600">
+            Welcome {loginned ? "back " : ""}to the Roost!
+          </span>
         </h2>
+      </div>
+    </div>
+  );
+}
+
+function Login() {
+  return (
+    <div class="flex justify-center items-center">
+      <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
+        <form action="/login" method="POST">
+          <label for="emailaddress" class="block text-lg">
+            Email
+          </label>
+          <input
+            type="email"
+            class="block bg-indigo-100 rounded p-0.5"
+            name="emailaddress"
+            id="emailaddress"
+            autocomplete="username"
+            required
+          ></input>
+          <label for="emailaddress" class="block text-lg">
+            Password
+          </label>
+          <input
+            type="password"
+            class="block bg-indigo-100 rounded p-0.5"
+            name="password"
+            id="password"
+            autocomplete="current-password"
+            required
+          ></input>
+          <input
+            class="block my-4 text-lg !px-2 rounded p-0.5"
+            type="submit"
+            value="Login"
+          ></input>
+        </form>
       </div>
     </div>
   );
