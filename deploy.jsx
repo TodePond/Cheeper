@@ -106,6 +106,7 @@ router.post("/login", async (ctx) => {
   } else if (signedInUser && signedInUid.uid !== auth.currentUser?.uid) {
     await auth.updateCurrentUser(signedInUser);
   }
+  ctx.response.redirect("/");
 });
 
 router.get("/(.*)", (ctx) => {
@@ -121,18 +122,6 @@ app.use(async (ctx, next) => {
   const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
   if (!signedInUid || !signedInUser || !auth.currentUser) {
     //ctx.cookies.delete("LOGGED_IN_UID");
-    /*const creds = await signInWithEmailAndPassword(
-      auth,
-      Deno.env.get("FIREBASE_USERNAME"),
-      Deno.env.get("FIREBASE_PASSWORD")
-    );
-    const { user } = creds;
-    if (user) {
-      users.set(user.uid, user);
-      ctx.cookies.set("LOGGED_IN_UID", user.uid);
-    } else if (signedInUser && signedInUid.uid !== auth.currentUser?.uid) {
-      await auth.updateCurrentUser(signedInUser);
-    }*/
   }
   return next();
 });
