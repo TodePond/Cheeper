@@ -50,8 +50,8 @@ const router = new Router();
 router.get("/", (ctx) => {
   const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
   const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
-  const loginned = signedInUid && signedInUser && auth.currentUser;
-  ctx.response.body = render(<Feed>{loginned}</Feed>).body;
+  const isLoggedIn = signedInUid && signedInUser && auth.currentUser;
+  ctx.response.body = render(Feed(isLoggedIn)).body;
   ctx.response.type = "text/html";
 });
 
@@ -96,7 +96,16 @@ router.get("/login", async (ctx) => {
 
 router.post("/login", async (ctx) => {
   const value = await ctx.request.body().value;
-  console.log(value);
+  const email = value.get("emailaddress");
+  const password = value.get("password");
+  const creds = await signInWithEmailAndPassword(auth, email, password);
+  const { user } = creds;
+  if (user) {
+    users.set(user.uid, user);
+    ctx.cookies.set("LOGGED_IN_UID", user.uid);
+  } else if (signedInUser && signedInUid.uid !== auth.currentUser?.uid) {
+    await auth.updateCurrentUser(signedInUser);
+  }
 });
 
 router.get("/(.*)", (ctx) => {
@@ -111,7 +120,8 @@ app.use(async (ctx, next) => {
   const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
   const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
   if (!signedInUid || !signedInUser || !auth.currentUser) {
-    const creds = await signInWithEmailAndPassword(
+    //ctx.cookies.delete("LOGGED_IN_UID");
+    /*const creds = await signInWithEmailAndPassword(
       auth,
       Deno.env.get("FIREBASE_USERNAME"),
       Deno.env.get("FIREBASE_PASSWORD")
@@ -122,7 +132,7 @@ app.use(async (ctx, next) => {
       ctx.cookies.set("LOGGED_IN_UID", user.uid);
     } else if (signedInUser && signedInUid.uid !== auth.currentUser?.uid) {
       await auth.updateCurrentUser(signedInUser);
-    }
+    }*/
   }
   return next();
 });
@@ -165,20 +175,20 @@ function NavBar() {
   );
 }
 
-function Feed(loginned) {
+const Feed = (isLoggedIn) => () => {
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
           <span class="block">Cheep Cheep</span>
           <span class="block text-indigo-600">
-            Welcome {loginned ? "back " : ""}to the Roost!
+            Welcome {isLoggedIn ? "back " : ""}to the Roost!
           </span>
         </h2>
       </div>
     </div>
   );
-}
+};
 
 function Login() {
   return (
