@@ -229,14 +229,14 @@ function Feed({ loggedIn }) {
 function Login({ invalid = false }) {
   return (
     <div class="flex justify-center items-center">
-      <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
+      <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
         <form action="/login" method="POST">
           <label for="emailaddress" class="block text-lg">
             Email
           </label>
           <input
             type="email"
-            class="block bg-indigo-100 rounded p-0.5"
+            class="w-full block bg-indigo-100 rounded p-0.5"
             name="emailaddress"
             id="emailaddress"
             autocomplete="username"
@@ -247,7 +247,7 @@ function Login({ invalid = false }) {
           </label>
           <input
             type="password"
-            class="block bg-indigo-100 rounded p-0.5"
+            class="w-full block bg-indigo-100 rounded p-0.5"
             name="password"
             id="password"
             autocomplete="current-password"
@@ -289,10 +289,10 @@ function Cheep() {
             id="url"
           ></input>
           <label for="file" class="block text-lg">
-            Video / Photo
+            Video / Image
           </label>
           <input
-            class="block bg-indigo-100 rounded p-0.5"
+            class="w-full block bg-indigo-100 rounded p-0.5"
             type="file"
             name="file"
             id="file"
