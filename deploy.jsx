@@ -27,6 +27,8 @@ import {
   getDocs,
   query,
   where,
+  orderBy,
+  limit,
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
 // Oak
@@ -206,7 +208,7 @@ function Feed({ cheeps }) {
   console.log(cheeps);
   const loggedIn = isLoggedIn();
   return (
-    <div class="flex justify-center items-center">
+    <div class="flex px-4 justify-center items-center">
       <div class="">
         {cheeps.map((cheep) => (
           <Cheep cheep={cheep} />
@@ -231,7 +233,7 @@ function Feed({ cheeps }) {
 
 function Cheep({ cheep }) {
   return (
-    <div class="block w-max my-10">
+    <div class="block my-10">
       <h2 class="font-bold">TodePond</h2>
       <p>{cheep.text}</p>
       <p class="text-gray-400">{new Date(cheep.time).toString()}</p>
