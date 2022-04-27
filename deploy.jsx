@@ -104,9 +104,6 @@ router.post("/cheep", async (ctx) => {
   const value = await body.value;
   const text = value.get("text");
   const file = value.get("file");
-
-  console.log(file);
-
   const time = Date.now();
 
   const cheep = { text, file, time };
@@ -233,11 +230,36 @@ function Feed({ cheeps }) {
 }
 
 function Cheep({ cheep }) {
+  const likes = cheep.likes !== undefined ? cheep.likes : 0;
+  const time = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const seconds = (cheep.time - Date.now()) / 1000;
+  const minutes = seconds / 60;
+  const hours = minutes / 60;
+  const days = hours / 24;
+
+  let timeText = "a while back";
+
+  if (seconds > -60) {
+    timeText = time.format(Math.floor(seconds), "second");
+  } else if (minutes > -60) {
+    timeText = time.format(Math.floor(minutes), "minute");
+  } else if (hours > -24) {
+    timeText = time.format(Math.floor(hours), "hours");
+  } else if (days > -7) {
+    timeText = time.format(Math.floor(days), "days");
+  } else {
+    timeText = new Date(cheep.time).toLocaleString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
   return (
     <div class="block my-10">
-      <h2 class="font-bold">TodePond</h2>
+      <span class="font-bold">TodePond</span>
+      <span class=" text-gray-400 text-sm"> - {timeText}</span>
       <p>{cheep.text}</p>
-      <p class="text-gray-400">{new Date(cheep.time).toString()}</p>
     </div>
   );
 }
