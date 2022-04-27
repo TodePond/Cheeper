@@ -80,6 +80,11 @@ const isLoggedIn = (ctx) => {
   return signedInUid && signedInUser && auth.currentUser;
 };
 
+router.get("/cheep", async (ctx) => {
+  ctx.response.body = render(<Cheep />, isLoggedIn(ctx)).body;
+  ctx.response.type = "text/html";
+});
+
 router.post("/cheep", async (ctx) => {
   const body = ctx.request.body();
   if (body.type !== "json") {
@@ -95,7 +100,11 @@ router.post("/cheep", async (ctx) => {
 });
 
 router.get("/login", async (ctx) => {
-  ctx.response.body = render(<Login></Login>, isLoggedIn(ctx)).body;
+  const invalid = ctx.request.url.searchParams.has("invalid");
+  ctx.response.body = render(
+    <Login invalid={invalid}></Login>,
+    isLoggedIn(ctx)
+  ).body;
   ctx.response.type = "text/html";
 });
 
@@ -110,7 +119,12 @@ router.post("/login", async (ctx) => {
   const value = await ctx.request.body().value;
   const email = value.get("emailaddress");
   const password = value.get("password");
-  const creds = await signInWithEmailAndPassword(auth, email, password);
+  let creds;
+  try {
+    creds = await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    return ctx.response.redirect("/login?invalid");
+  }
   const { user } = creds;
   if (user) {
     users.set(user.uid, user);
@@ -167,12 +181,19 @@ const App = (args) => {
 
 const NavBar = ({ loggedIn }) => {
   return (
-    <nav class="font-sans flex flex-col text-center sm:flex-row sm:text-left sm:justify-between py-4 px-6 bg-white shadow sm:items-baseline w-full">
+    <nav class="font-sans flex text-center flex-row text-left justify-between py-4 px-6 bg-white shadow items-baseline w-full">
       <div class="mb-2 sm:mb-0">
         <a href="/" class="text-2xl no-underline hover:text-indigo-800">
           Cheeper
         </a>
       </div>
+      {loggedIn ? (
+        <div class="mb-2 sm:mb-0">
+          <a href="/cheep" class="text-2xl no-underline hover:text-indigo-800">
+            Cheep
+          </a>
+        </div>
+      ) : undefined}
       {loggedIn ? (
         <div class="mb-2 sm:mb-0">
           <a href="/logout" class="text-2xl no-underline hover:text-indigo-800">
@@ -205,7 +226,7 @@ function Feed({ loggedIn }) {
   );
 }
 
-function Login() {
+function Login({ invalid = false }) {
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
@@ -233,9 +254,53 @@ function Login() {
             required
           ></input>
           <input
-            class="block my-4 text-lg !px-2 rounded p-0.5"
+            class="bg-indigo-100 block my-2 text-lg !px-2 rounded p-0.5 hover:bg-indigo-200"
             type="submit"
             value="Login"
+          ></input>
+        </form>
+        {invalid ? <div class="text-red-500">bad login :(</div> : undefined}
+      </div>
+    </div>
+  );
+}
+
+function Cheep() {
+  return (
+    <div class="flex justify-center items-center">
+      <div class="max-w-full py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
+        <form action="/cheep" method="POST">
+          <label for="text" class="block text-lg">
+            Text
+          </label>
+          <textarea
+            class="block w-full bg-indigo-100 rounded p-0.5"
+            name="text"
+            id="text"
+            type="text"
+          ></textarea>
+          <label for="url" class="block text-lg">
+            Link
+          </label>
+          <input
+            type="url"
+            class="block w-full bg-indigo-100 rounded p-0.5"
+            name="url"
+            id="url"
+          ></input>
+          <label for="file" class="block text-lg">
+            Video / Photo
+          </label>
+          <input
+            class="block bg-indigo-100 rounded p-0.5"
+            type="file"
+            name="file"
+            id="file"
+          ></input>
+          <input
+            class="bg-indigo-100 block my-2 text-lg !px-2 rounded p-0.5 hover:bg-indigo-200"
+            type="submit"
+            value="Cheep"
           ></input>
         </form>
       </div>
