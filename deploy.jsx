@@ -258,8 +258,15 @@ function Cheep({ cheep }) {
   return (
     <div class="block my-10">
       <span class="font-bold">TodePond</span>
-      <span class=" text-gray-400 text-sm"> - {timeText}</span>
+      <span class="text-gray-400 text-sm"> - {timeText}</span>
       <p>{cheep.text}</p>
+
+      <div class="pt-1">
+        <a href="#" class="">
+          ❤
+        </a>
+        <span class="text-red-700">×{likes}</span>
+      </div>
     </div>
   );
 }
