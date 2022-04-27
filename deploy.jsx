@@ -49,8 +49,13 @@ const isLoggedIn = () => {
 };
 
 const router = new Router();
-router.get("/", (ctx) => {
-  ctx.response.body = render(<Feed />).body;
+router.get("/", async (ctx) => {
+  const cheepCollection = collection(db, "cheeps");
+  const querySnapshot = await getDocs(cheepCollection);
+
+  const cheepDocuments = querySnapshot.docs;
+  const cheeps = cheepDocuments.map((doc) => doc.data());
+  ctx.response.body = render(<Feed cheeps={cheeps} />).body;
   ctx.response.type = "text/html";
 });
 
@@ -65,20 +70,23 @@ router.get("/cheeps", async (ctx) => {
     ctx.response.type = "text/html";
   }
 });
-router.get("/cheep", async (ctx) => {
-  ctx.response.body = render(<Cheep />).body;
-  ctx.response.type = "text/html";
-});
 
 const isCheep = (value) => {
   if (typeof value !== "object") return false;
   if (value === null) return false;
   if (!("file" in value)) return false;
-  if (!("url" in value)) return false;
   if (!("text" in value)) return false;
   if (!("time" in value)) return false;
   return true;
 };
+
+router.get("/cheep", async (ctx) => {
+  if (!isLoggedIn()) {
+    ctx.response.redirect("/login");
+  }
+  ctx.response.body = render(<NewCheep />).body;
+  ctx.response.type = "text/html";
+});
 
 router.post("/cheep", async (ctx) => {
   const body = ctx.request.body();
@@ -86,37 +94,36 @@ router.post("/cheep", async (ctx) => {
     ctx.throw(Status.BadRequest, "Cheep was not well formed");
     return;
   }
-
   if (!isLoggedIn()) {
     ctx.throw(Status.BadRequest, "You need to login to cheep");
     return;
   }
-
   const value = await body.value;
   const text = value.get("text");
-  const url = value.get("url");
   const file = value.get("file");
+
+  console.log(file);
 
   const time = Date.now();
 
-  const cheep = { text, url, file, time };
+  const cheep = { text, file, time };
   if (!isCheep(cheep)) {
     ctx.throw(Status.BadRequest, "Cheep was not well formed");
     return;
   }
   addDoc(collection(db, "cheeps"), cheep);
-  ctx.response.status = Status.NoContent;
+  ctx.response.redirect("/");
+});
+
+router.get("/logout", async (ctx) => {
+  auth.signOut();
+  ctx.response.redirect("/");
 });
 
 router.get("/login", async (ctx) => {
   const invalid = ctx.request.url.searchParams.has("invalid");
   ctx.response.body = render(<Login invalid={invalid}></Login>).body;
   ctx.response.type = "text/html";
-});
-
-router.get("/logout", async (ctx) => {
-  auth.signOut();
-  ctx.response.redirect("/");
 });
 
 router.post("/login", async (ctx) => {
@@ -146,20 +153,6 @@ app.use(virtualStorage());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-/*
-
-const sendCheep = async () => {
-    const req = new XMLHttpRequest()
-    req.open("POST", "http://localhost:8000/cheep")
-    req.setRequestHeader("Content-Type", "application/json")
-    req.send('{"text": "Cheeeeeep", "id": "0"}')
-    req.addEventListener("load", function() {
-        console.log(this)
-    })
-}
-
-*/
-
 function App({ children }) {
   return (
     <html>
@@ -180,26 +173,26 @@ const NavBar = () => {
   const loggedIn = isLoggedIn();
   return (
     <nav class="font-sans flex text-center flex-row text-left justify-between py-4 px-6 bg-white shadow items-baseline w-full">
-      <div class="mb-2 sm:mb-0">
+      <div class="mb-0">
         <a href="/" class="text-2xl no-underline hover:text-indigo-800">
           Cheeper
         </a>
       </div>
       {loggedIn ? (
-        <div class="mb-2 sm:mb-0">
+        <div class="mb-0">
           <a href="/cheep" class="text-2xl no-underline hover:text-indigo-800">
             Cheep
           </a>
         </div>
       ) : undefined}
       {loggedIn ? (
-        <div class="mb-2 sm:mb-0">
+        <div class="mb-0">
           <a href="/logout" class="text-2xl no-underline hover:text-indigo-800">
             Logout
           </a>
         </div>
       ) : (
-        <div class="mb-2 sm:mb-0">
+        <div class="mb-0">
           <a href="/login" class="text-2xl no-underline hover:text-indigo-800">
             Login
           </a>
@@ -209,9 +202,20 @@ const NavBar = () => {
   );
 };
 
-function Feed() {
+function Feed({ cheeps }) {
+  console.log(cheeps);
   const loggedIn = isLoggedIn();
   return (
+    <div class="flex justify-center items-center">
+      <div class="">
+        {cheeps.map((cheep) => (
+          <Cheep cheep={cheep} />
+        ))}
+      </div>
+    </div>
+  );
+
+  /*return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
@@ -222,6 +226,16 @@ function Feed() {
         </h2>
       </div>
     </div>
+  );*/
+}
+
+function Cheep({ cheep }) {
+  return (
+    <div class="block w-max my-10">
+      <h2 class="font-bold">TodePond</h2>
+      <p>{cheep.text}</p>
+      <p class="text-gray-400">{new Date(cheep.time).toString()}</p>
+    </div>
   );
 }
 
@@ -230,9 +244,9 @@ function Login({ invalid = false }) {
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
         <form action="/login" method="POST">
-          <label for="emailaddress" class="block text-lg">
+          {/*<label for="emailaddress" class="block">
             Email
-          </label>
+          </label>*/}
           <input
             type="email"
             class="w-full block bg-indigo-100 rounded p-0.5"
@@ -241,19 +255,19 @@ function Login({ invalid = false }) {
             autocomplete="username"
             required
           ></input>
-          <label for="emailaddress" class="block text-lg">
+          {/*<label for="emailaddress" class="block">
             Password
-          </label>
+          </label>*/}
           <input
             type="password"
-            class="w-full block bg-indigo-100 rounded p-0.5"
+            class="my-2 w-full block bg-indigo-100 rounded p-0.5"
             name="password"
             id="password"
             autocomplete="current-password"
             required
           ></input>
           <input
-            class="bg-indigo-100 block my-2 text-lg !px-2 rounded p-0.5 hover:bg-indigo-200"
+            class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200"
             type="submit"
             value="Login"
           ></input>
@@ -264,40 +278,26 @@ function Login({ invalid = false }) {
   );
 }
 
-function Cheep() {
+function NewCheep() {
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-full py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
         <form action="/cheep" method="POST">
-          <label for="text" class="block text-lg">
-            Text
-          </label>
           <textarea
-            class="block w-full bg-indigo-100 rounded p-0.5"
+            class="block h-24 w-full bg-indigo-100 rounded p-0.5"
             name="text"
             id="text"
             type="text"
           ></textarea>
-          <label for="url" class="block text-lg">
-            Link
-          </label>
           <input
-            type="url"
-            class="block w-full bg-indigo-100 rounded p-0.5"
-            name="url"
-            id="url"
-          ></input>
-          <label for="file" class="block text-lg">
-            Video / Image
-          </label>
-          <input
-            class="w-full block bg-indigo-100 rounded p-0.5"
+            class="my-2 w-full block bg-indigo-100 rounded p-0.5"
             type="file"
             name="file"
             id="file"
+            accept="video/*,image/*"
           ></input>
           <input
-            class="bg-indigo-100 block my-2 text-lg !px-2 rounded p-0.5 hover:bg-indigo-200"
+            class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200"
             type="submit"
             value="Cheep"
           ></input>
