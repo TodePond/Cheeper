@@ -17,6 +17,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebas
 import {
   getAuth,
   signInWithEmailAndPassword,
+  updateCurrentUser,
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 import {
   getFirestore,
@@ -44,12 +45,13 @@ const firebaseApp = initializeApp(firebaseConfig, "example");
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 
-const users = new Map();
+const isLoggedIn = () => {
+  return auth.currentUser !== null;
+};
 
 const router = new Router();
-
 router.get("/", (ctx) => {
-  const loggedIn = isLoggedIn(ctx);
+  const loggedIn = isLoggedIn();
   ctx.response.body = render(<Feed loggedIn={loggedIn} />, loggedIn).body;
   ctx.response.type = "text/html";
 });
@@ -65,35 +67,44 @@ router.get("/cheeps", async (ctx) => {
     ctx.response.type = "text/html";
   }
 });
+router.get("/cheep", async (ctx) => {
+  ctx.response.body = render(<Cheep />, isLoggedIn()).body;
+  ctx.response.type = "text/html";
+});
 
 const isCheep = (value) => {
   if (typeof value !== "object") return false;
   if (value === null) return false;
-  if (!("id" in value)) return false;
+  if (!("file" in value)) return false;
+  if (!("url" in value)) return false;
   if (!("text" in value)) return false;
+  if (!("time" in value)) return false;
   return true;
 };
 
-const isLoggedIn = (ctx) => {
-  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
-  const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
-  return signedInUid && signedInUser && auth.currentUser;
-};
-
-router.get("/cheep", async (ctx) => {
-  ctx.response.body = render(<Cheep />, isLoggedIn(ctx)).body;
-  ctx.response.type = "text/html";
-});
-
 router.post("/cheep", async (ctx) => {
   const body = ctx.request.body();
-  if (body.type !== "json") {
-    ctx.throw(Status.BadRequest, "Must be a JSON document");
+  if (body.type !== "form") {
+    ctx.throw(Status.BadRequest, "Cheep was not well formed");
+    return;
   }
-  const cheep = await body.value;
-  console.log(cheep);
+
+  if (!isLoggedIn()) {
+    ctx.throw(Status.BadRequest, "You need to login to cheep");
+    return;
+  }
+
+  const value = await body.value;
+  const text = value.get("text");
+  const url = value.get("url");
+  const file = value.get("file");
+
+  const time = Date.now();
+
+  const cheep = { text, url, file, time };
   if (!isCheep(cheep)) {
     ctx.throw(Status.BadRequest, "Cheep was not well formed");
+    return;
   }
   addDoc(collection(db, "cheeps"), cheep);
   ctx.response.status = Status.NoContent;
@@ -103,15 +114,13 @@ router.get("/login", async (ctx) => {
   const invalid = ctx.request.url.searchParams.has("invalid");
   ctx.response.body = render(
     <Login invalid={invalid}></Login>,
-    isLoggedIn(ctx)
+    isLoggedIn()
   ).body;
   ctx.response.type = "text/html";
 });
 
 router.get("/logout", async (ctx) => {
-  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
-  users.delete(signedInUid);
-  ctx.cookies.delete("LOGGED_IN_UID");
+  auth.signOut();
   ctx.response.redirect("/");
 });
 
@@ -127,10 +136,7 @@ router.post("/login", async (ctx) => {
   }
   const { user } = creds;
   if (user) {
-    users.set(user.uid, user);
-    ctx.cookies.set("LOGGED_IN_UID", user.uid);
-  } else if (signedInUser && signedInUid.uid !== auth.currentUser?.uid) {
-    await auth.updateCurrentUser(signedInUser);
+    await updateCurrentUser(auth, user);
   }
   ctx.response.redirect("/");
 });
@@ -142,16 +148,6 @@ router.get("/(.*)", (ctx) => {
 
 const app = new Application();
 app.use(virtualStorage());
-
-app.use(async (ctx, next) => {
-  const signedInUid = ctx.cookies.get("LOGGED_IN_UID");
-  const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined;
-  if (!signedInUid || !signedInUser || !auth.currentUser) {
-    //ctx.cookies.delete("LOGGED_IN_UID");
-  }
-  return next();
-});
-
 app.use(router.routes());
 app.use(router.allowedMethods());
 
@@ -172,10 +168,17 @@ const sendCheep = async () => {
 const App = (args) => {
   const { loggedIn, children } = args;
   return (
-    <div class="min-h-screen">
-      <NavBar loggedIn={loggedIn} />
-      {children}
-    </div>
+    (
+      <head>
+        <title>Cheeper</title>
+      </head>
+    ),
+    (
+      <div class="min-h-screen">
+        <NavBar loggedIn={loggedIn} />
+        {children}
+      </div>
+    )
   );
 };
 
