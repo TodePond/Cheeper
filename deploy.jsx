@@ -53,10 +53,11 @@ const isLoggedIn = () => {
 const router = new Router();
 router.get("/", async (ctx) => {
   const cheepCollection = collection(db, "cheeps");
-  const querySnapshot = await getDocs(cheepCollection);
-
+  const q = query(cheepCollection, orderBy("time", "desc"), limit(10));
+  const querySnapshot = await getDocs(q);
   const cheepDocuments = querySnapshot.docs;
   const cheeps = cheepDocuments.map((doc) => doc.data());
+
   ctx.response.body = render(<Feed cheeps={cheeps} />).body;
   ctx.response.type = "text/html";
 });
