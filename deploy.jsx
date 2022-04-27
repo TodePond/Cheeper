@@ -36,8 +36,7 @@ import {
   Status,
 } from "https://deno.land/x/oak@v7.7.0/mod.ts";
 
-const render = (component, loggedIn) =>
-  ssr(() => <App loggedIn={loggedIn}>{component}</App>);
+const render = (component) => ssr(() => <App>{component}</App>);
 installGlobals();
 
 const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"));
@@ -51,8 +50,7 @@ const isLoggedIn = () => {
 
 const router = new Router();
 router.get("/", (ctx) => {
-  const loggedIn = isLoggedIn();
-  ctx.response.body = render(<Feed loggedIn={loggedIn} />, loggedIn).body;
+  ctx.response.body = render(<Feed />).body;
   ctx.response.type = "text/html";
 });
 
@@ -68,7 +66,7 @@ router.get("/cheeps", async (ctx) => {
   }
 });
 router.get("/cheep", async (ctx) => {
-  ctx.response.body = render(<Cheep />, isLoggedIn()).body;
+  ctx.response.body = render(<Cheep />).body;
   ctx.response.type = "text/html";
 });
 
@@ -112,10 +110,7 @@ router.post("/cheep", async (ctx) => {
 
 router.get("/login", async (ctx) => {
   const invalid = ctx.request.url.searchParams.has("invalid");
-  ctx.response.body = render(
-    <Login invalid={invalid}></Login>,
-    isLoggedIn()
-  ).body;
+  ctx.response.body = render(<Login invalid={invalid}></Login>).body;
   ctx.response.type = "text/html";
 });
 
@@ -165,24 +160,24 @@ const sendCheep = async () => {
 
 */
 
-const App = (args) => {
-  const { loggedIn, children } = args;
+function App({ children }) {
   return (
-    (
+    <html>
       <head>
         <title>Cheeper</title>
       </head>
-    ),
-    (
-      <div class="min-h-screen">
-        <NavBar loggedIn={loggedIn} />
-        {children}
-      </div>
-    )
+      <body>
+        <div class="min-h-screen">
+          <NavBar />
+          {children}
+        </div>
+      </body>
+    </html>
   );
-};
+}
 
-const NavBar = ({ loggedIn }) => {
+const NavBar = () => {
+  const loggedIn = isLoggedIn();
   return (
     <nav class="font-sans flex text-center flex-row text-left justify-between py-4 px-6 bg-white shadow items-baseline w-full">
       <div class="mb-2 sm:mb-0">
@@ -214,7 +209,8 @@ const NavBar = ({ loggedIn }) => {
   );
 };
 
-function Feed({ loggedIn }) {
+function Feed() {
+  const loggedIn = isLoggedIn();
   return (
     <div class="flex justify-center items-center">
       <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
