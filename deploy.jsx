@@ -14,8 +14,22 @@ import "https://deno.land/std@0.136.0/dotenv/load.ts"
 
 // Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"
-import { getAuth, signInWithEmailAndPassword, updateCurrentUser } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"
-import { getFirestore, collection, addDoc, deleteDoc, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"
+import {
+	getAuth,
+	signInWithEmailAndPassword,
+	updateCurrentUser,
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"
+import {
+	getFirestore,
+	collection,
+	addDoc,
+	deleteDoc,
+	getDocs,
+	query,
+	where,
+	orderBy,
+	limit,
+} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"
 
 // Oak
 import { Application, Router, Status } from "https://deno.land/x/oak@v7.7.0/mod.ts"
@@ -261,12 +275,30 @@ function Login({ invalid = false }) {
 					{/*<label for="emailaddress" class="block">
             Email
           </label>*/}
-					<input type="email" class="w-full block bg-indigo-100 rounded p-0.5" name="emailaddress" id="emailaddress" autocomplete="username" required></input>
+					<input
+						type="email"
+						class="w-full block bg-indigo-100 rounded p-0.5"
+						name="emailaddress"
+						id="emailaddress"
+						autocomplete="username"
+						required
+					></input>
 					{/*<label for="emailaddress" class="block">
             Password
           </label>*/}
-					<input type="password" class="my-2 w-full block bg-indigo-100 rounded p-0.5" name="password" id="password" autocomplete="current-password" required></input>
-					<input class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200" type="submit" value="Login"></input>
+					<input
+						type="password"
+						class="my-2 w-full block bg-indigo-100 rounded p-0.5"
+						name="password"
+						id="password"
+						autocomplete="current-password"
+						required
+					></input>
+					<input
+						class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200"
+						type="submit"
+						value="Login"
+					></input>
 				</form>
 				{invalid ? <div class="text-red-500">bad login :(</div> : undefined}
 			</div>
@@ -279,9 +311,24 @@ function NewCheep() {
 		<div class="flex justify-center items-center">
 			<div class="max-w-full py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
 				<form action="/cheep" method="POST">
-					<textarea class="block h-24 w-full bg-indigo-100 rounded p-0.5" name="text" id="text" type="text"></textarea>
-					<input class="my-2 w-full block bg-indigo-100 rounded p-0.5" type="file" name="file" id="file" accept="video/*,image/*"></input>
-					<input class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200" type="submit" value="Cheep"></input>
+					<textarea
+						class="block h-24 w-full bg-indigo-100 rounded p-0.5"
+						name="text"
+						id="text"
+						type="text"
+					></textarea>
+					<input
+						class="my-2 w-full block bg-indigo-100 rounded p-0.5"
+						type="file"
+						name="file"
+						id="file"
+						accept="video/*,image/*"
+					></input>
+					<input
+						class="bg-indigo-100 block my-2 !px-2 rounded p-0.5 hover:bg-indigo-200"
+						type="submit"
+						value="Cheep"
+					></input>
 				</form>
 			</div>
 		</div>
@@ -296,8 +343,12 @@ function NotFound() {
 					<p class="text-4xl font-extrabold text-indigo-600 sm:text-5xl">404</p>
 					<div class="sm:ml-6">
 						<div class="sm:border-l sm:border-gray-200 sm:pl-6">
-							<h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">Page not found</h1>
-							<p class="mt-1 text-base text-gray-500">Please check the URL in the address bar and try again.</p>
+							<h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+								Page not found
+							</h1>
+							<p class="mt-1 text-base text-gray-500">
+								Please check the URL in the address bar and try again.
+							</p>
 						</div>
 					</div>
 				</main>
@@ -314,7 +365,9 @@ function NotAllowed() {
 					<p class="text-4xl font-extrabold text-indigo-600 sm:text-5xl">401</p>
 					<div class="sm:ml-6">
 						<div class="sm:border-l sm:border-gray-200 sm:pl-6">
-							<h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">Unauthorised</h1>
+							<h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+								Unauthorised
+							</h1>
 							<p class="mt-1 text-base text-gray-500">Please sign in and try again.</p>
 						</div>
 					</div>
