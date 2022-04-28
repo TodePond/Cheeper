@@ -34,7 +34,7 @@ import {
 // Oak
 import { Application, Router, Status } from "https://deno.land/x/oak@v7.7.0/mod.ts"
 
-const render = (ctx, component) => ssr(() => <App ctx={ctx}>{component}</App>).body
+const render = (component) => ssr(() => <App>{component}</App>).body
 installGlobals()
 
 const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"))
@@ -42,8 +42,7 @@ const firebaseApp = initializeApp(firebaseConfig, "example")
 const auth = getAuth(firebaseApp)
 const db = getFirestore(firebaseApp)
 
-const isLoggedIn = (ctx) => {
-	console.log(ctx)
+const isLoggedIn = () => {
 	return auth.currentUser !== null
 }
 
@@ -55,7 +54,7 @@ router.get("/", async (ctx) => {
 	const cheepDocuments = querySnapshot.docs
 	const cheeps = cheepDocuments.map((doc) => doc.data())
 
-	ctx.response.body = render(ctx, <Feed cheeps={cheeps} />)
+	ctx.response.body = render(<Feed cheeps={cheeps} />)
 	ctx.response.type = "text/html"
 })
 
@@ -66,7 +65,7 @@ router.get("/cheeps", async (ctx) => {
 		ctx.response.body = querySnapshot.docs.map((doc) => doc.data())
 		ctx.response.type = "json"
 	} catch (e) {
-		ctx.response.body = render(ctx, <NotAllowed />)
+		ctx.response.body = render(<NotAllowed />)
 		ctx.response.type = "text/html"
 	}
 })
@@ -81,10 +80,10 @@ const isCheep = (value) => {
 }
 
 router.get("/new", async (ctx) => {
-	if (!isLoggedIn(ctx)) {
+	if (!isLoggedIn()) {
 		ctx.response.redirect("/login")
 	}
-	ctx.response.body = render(ctx, <New />)
+	ctx.response.body = render(<New />)
 	ctx.response.type = "text/html"
 })
 
@@ -94,7 +93,7 @@ router.post("/new", async (ctx) => {
 		ctx.throw(Status.BadRequest, "Cheep was not well formed")
 		return
 	}
-	if (!isLoggedIn(ctx)) {
+	if (!isLoggedIn()) {
 		ctx.throw(Status.BadRequest, "You need to login to cheep")
 		return
 	}
@@ -119,7 +118,7 @@ router.get("/logout", async (ctx) => {
 
 router.get("/login", async (ctx) => {
 	const invalid = ctx.request.url.searchParams.has("invalid")
-	ctx.response.body = render(ctx, <Login invalid={invalid}></Login>)
+	ctx.response.body = render(<Login invalid={invalid}></Login>)
 	ctx.response.type = "text/html"
 })
 
@@ -141,14 +140,17 @@ router.post("/login", async (ctx) => {
 })
 
 router.get("/(.*)", (ctx) => {
-	ctx.response.body = render(ctx, <NotFound />)
+	ctx.response.body = render(<NotFound />)
 	ctx.response.type = "text/html"
 })
 
 const app = new Application()
 app.use(virtualStorage())
-app.use(router.routes())
-app.use(router.allowedMethods())
+
+app.use(async (ctx, next) => {
+	console.log(ctx)
+	return next()
+})
 
 const App = ({ ctx, children }) => {
 	return (
@@ -167,7 +169,7 @@ const App = ({ ctx, children }) => {
 }
 
 const NavBar = ({ ctx }) => {
-	const loggedIn = isLoggedIn(ctx)
+	const loggedIn = isLoggedIn()
 	return (
 		<nav class="font-sans flex text-center flex-row text-left justify-between py-4 px-6 bg-white shadow items-baseline w-full">
 			<div class="mb-0">
@@ -357,4 +359,6 @@ const NotAllowed = () => {
 	)
 }
 
+app.use(router.routes())
+app.use(router.allowedMethods())
 await app.listen({ port: 8000 })
