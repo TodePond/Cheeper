@@ -43,6 +43,7 @@ const auth = getAuth(firebaseApp)
 const db = getFirestore(firebaseApp)
 
 const isLoggedIn = (ctx) => {
+	console.log(ctx)
 	return auth.currentUser !== null
 }
 
@@ -79,15 +80,15 @@ const isCheep = (value) => {
 	return true
 }
 
-router.get("/cheep", async (ctx) => {
+router.get("/new", async (ctx) => {
 	if (!isLoggedIn(ctx)) {
 		ctx.response.redirect("/login")
 	}
-	ctx.response.body = render(ctx, <NewCheep />)
+	ctx.response.body = render(ctx, <New />)
 	ctx.response.type = "text/html"
 })
 
-router.post("/cheep", async (ctx) => {
+router.post("/new", async (ctx) => {
 	const body = ctx.request.body()
 	if (body.type !== "form") {
 		ctx.throw(Status.BadRequest, "Cheep was not well formed")
@@ -149,7 +150,7 @@ app.use(virtualStorage())
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-function App({ ctx, children }) {
+const App = ({ ctx, children }) => {
 	return (
 		<html>
 			<head>
@@ -171,12 +172,12 @@ const NavBar = ({ ctx }) => {
 		<nav class="font-sans flex text-center flex-row text-left justify-between py-4 px-6 bg-white shadow items-baseline w-full">
 			<div class="mb-0">
 				<a href="/" class="text-2xl no-underline hover:text-indigo-800">
-					Cheeper
+					Home
 				</a>
 			</div>
 			{loggedIn ? (
 				<div class="mb-0">
-					<a href="/cheep" class="text-2xl no-underline hover:text-indigo-800">
+					<a href="/new" class="text-2xl no-underline hover:text-indigo-800">
 						Cheep
 					</a>
 				</div>
@@ -198,7 +199,7 @@ const NavBar = ({ ctx }) => {
 	)
 }
 
-function Feed({ cheeps }) {
+const Feed = ({ cheeps }) => {
 	return (
 		<div class="flex px-4 justify-center items-center">
 			<div class="">
@@ -210,7 +211,7 @@ function Feed({ cheeps }) {
 	)
 }
 
-function Cheep({ cheep }) {
+const Cheep = ({ cheep }) => {
 	const likes = cheep.likes !== undefined ? cheep.likes : 0
 	const time = new Intl.RelativeTimeFormat("en", { numeric: "auto" })
 	const seconds = (cheep.time - Date.now()) / 1000
@@ -252,7 +253,7 @@ function Cheep({ cheep }) {
 	)
 }
 
-function Login({ invalid = false }) {
+const Login = ({ invalid = false }) => {
 	return (
 		<div class="flex justify-center items-center">
 			<div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
@@ -285,7 +286,7 @@ function Login({ invalid = false }) {
 	)
 }
 
-function NewCheep() {
+const New = () => {
 	return (
 		<div class="flex justify-center items-center">
 			<div class="max-w-full py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
@@ -314,7 +315,7 @@ function NewCheep() {
 	)
 }
 
-function NotFound() {
+const NotFound = () => {
 	return (
 		<div class="min-h-full px-4 py-16 sm:px-6 sm:py-24 md:grid md:place-items-center lg:px-8">
 			<div class="max-w-max mx-auto">
@@ -336,7 +337,7 @@ function NotFound() {
 	)
 }
 
-function NotAllowed() {
+const NotAllowed = () => {
 	return (
 		<div class="min-h-full px-4 py-16 sm:px-6 sm:py-24 md:grid md:place-items-center lg:px-8">
 			<div class="max-w-max mx-auto">
