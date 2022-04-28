@@ -34,7 +34,7 @@ import {
 // Oak
 import { Application, Router, Status } from "https://deno.land/x/oak@v7.7.0/mod.ts"
 
-const render = component => ssr(() => <App>{component}</App>)
+const render = (ctx, component) => ssr(() => <App>{component}</App>).body
 installGlobals()
 
 const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"))
@@ -54,7 +54,7 @@ router.get("/", async ctx => {
 	const cheepDocuments = querySnapshot.docs
 	const cheeps = cheepDocuments.map(doc => doc.data())
 
-	ctx.response.body = render(<Feed cheeps={cheeps} />).body
+	ctx.response.body = render(ctx, <Feed cheeps={cheeps} />)
 	ctx.response.type = "text/html"
 })
 
@@ -65,7 +65,7 @@ router.get("/cheeps", async ctx => {
 		ctx.response.body = querySnapshot.docs.map(doc => doc.data())
 		ctx.response.type = "json"
 	} catch (e) {
-		ctx.response.body = render(<NotAllowed />).body
+		ctx.response.body = render(ctx, <NotAllowed />)
 		ctx.response.type = "text/html"
 	}
 })
@@ -83,7 +83,7 @@ router.get("/cheep", async ctx => {
 	if (!isLoggedIn()) {
 		ctx.response.redirect("/login")
 	}
-	ctx.response.body = render(<NewCheep />).body
+	ctx.response.body = render(ctx, <NewCheep />)
 	ctx.response.type = "text/html"
 })
 
@@ -118,7 +118,7 @@ router.get("/logout", async ctx => {
 
 router.get("/login", async ctx => {
 	const invalid = ctx.request.url.searchParams.has("invalid")
-	ctx.response.body = render(<Login invalid={invalid}></Login>).body
+	ctx.response.body = render(ctx, <Login invalid={invalid}></Login>)
 	ctx.response.type = "text/html"
 })
 
@@ -140,7 +140,7 @@ router.post("/login", async ctx => {
 })
 
 router.get("/(.*)", ctx => {
-	ctx.response.body = render(<NotFound />).body
+	ctx.response.body = render(ctx, <NotFound />)
 	ctx.response.type = "text/html"
 })
 
@@ -210,19 +210,6 @@ function Feed({ cheeps }) {
 			</div>
 		</div>
 	)
-
-	/*return (
-    <div class="flex justify-center items-center">
-      <div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
-        <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-          <span class="block">Cheep Cheep</span>
-          <span class="block text-indigo-600">
-            Welcome {loggedIn ? "back " : ""}to the Roost!
-          </span>
-        </h2>
-      </div>
-    </div>
-  );*/
 }
 
 function Cheep({ cheep }) {
@@ -272,9 +259,6 @@ function Login({ invalid = false }) {
 		<div class="flex justify-center items-center">
 			<div class="max-w-7xl py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
 				<form action="/login" method="POST">
-					{/*<label for="emailaddress" class="block">
-            Email
-          </label>*/}
 					<input
 						type="email"
 						class="w-full block bg-indigo-100 rounded p-0.5"
@@ -283,9 +267,6 @@ function Login({ invalid = false }) {
 						autocomplete="username"
 						required
 					></input>
-					{/*<label for="emailaddress" class="block">
-            Password
-          </label>*/}
 					<input
 						type="password"
 						class="my-2 w-full block bg-indigo-100 rounded p-0.5"
