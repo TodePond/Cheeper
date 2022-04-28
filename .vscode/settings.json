@@ -1,4 +1,9 @@
 {
 	"deno.enable": true,
-	"editor.formatOnSave": true
+	"editor.formatOnSave": true,
+	"prettier.arrowParens": "avoid",
+	"prettier.printWidth": 200,
+	"prettier.semi": false,
+	"prettier.tabWidth": 4,
+	"prettier.useTabs": true
 }
