@@ -18,6 +18,9 @@ import {
 	getAuth,
 	signInWithEmailAndPassword,
 	updateCurrentUser,
+	getIdToken,
+	setPersistence,
+	browserLocalPersistence,
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"
 import {
 	getFirestore,
@@ -41,6 +44,8 @@ const firebaseConfig = JSON.parse(Deno.env.get("FIREBASE_CONFIG"))
 const firebaseApp = initializeApp(firebaseConfig, "example")
 const auth = getAuth(firebaseApp)
 const db = getFirestore(firebaseApp)
+
+setPersistence(auth, browserLocalPersistence)
 
 const isLoggedIn = () => {
 	return auth.currentUser !== null
@@ -111,8 +116,9 @@ router.post("/new", async (ctx) => {
 	ctx.response.redirect("/")
 })
 
+const users = new Map()
 router.get("/logout", async (ctx) => {
-	auth.signOut()
+	await auth.signOut()
 	ctx.response.redirect("/")
 })
 
@@ -134,22 +140,29 @@ router.post("/login", async (ctx) => {
 	}
 	const { user } = creds
 	if (user) {
+		const token = await getIdToken(user, true)
+		console.log(auth.createSessionCookie)
 		await updateCurrentUser(auth, user)
 	}
 	ctx.response.redirect("/")
-})
-
-router.get("/(.*)", (ctx) => {
-	ctx.response.body = render(<NotFound />)
-	ctx.response.type = "text/html"
 })
 
 const app = new Application()
 app.use(virtualStorage())
 
 app.use(async (ctx, next) => {
-	console.log(ctx)
+	/*const cookie = undefined
+	if (cookie === undefined) {
+		await updateCurrentUser(auth, null)
+		return next()
+	}
+	*/
 	return next()
+})
+
+router.get("/(.*)", (ctx) => {
+	ctx.response.body = render(<NotFound />)
+	ctx.response.type = "text/html"
 })
 
 const App = ({ ctx, children }) => {
@@ -292,7 +305,7 @@ const New = () => {
 	return (
 		<div class="flex justify-center items-center">
 			<div class="max-w-full py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
-				<form action="/cheep" method="POST">
+				<form action="/new" method="POST">
 					<textarea
 						class="block h-24 w-full bg-indigo-100 rounded p-0.5"
 						name="text"
