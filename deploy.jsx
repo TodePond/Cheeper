@@ -54,7 +54,7 @@ const isLoggedIn = () => {
 const router = new Router()
 router.get("/", async (ctx) => {
 	const cheepCollection = collection(db, "cheeps")
-	const q = query(cheepCollection, orderBy("time", "desc"), limit(10))
+	const q = query(cheepCollection, orderBy("time", "desc"), limit(100))
 	const querySnapshot = await getDocs(q)
 	const cheepDocuments = querySnapshot.docs
 	const cheeps = cheepDocuments.map((doc) => doc.data())
@@ -141,7 +141,7 @@ router.post("/login", async (ctx) => {
 	const { user } = creds
 	if (user) {
 		const token = await getIdToken(user, true)
-		console.log(auth.createSessionCookie)
+		//console.log(auth.createSessionCookie)
 		await updateCurrentUser(auth, user)
 	}
 	ctx.response.redirect("/")
@@ -237,13 +237,13 @@ const Cheep = ({ cheep }) => {
 	let timeText = "a while back"
 
 	if (seconds > -60) {
-		timeText = time.format(Math.floor(seconds), "second")
+		timeText = time.format(Math.ceil(seconds), "second")
 	} else if (minutes > -60) {
-		timeText = time.format(Math.floor(minutes), "minute")
+		timeText = time.format(Math.ceil(minutes), "minute")
 	} else if (hours > -24) {
-		timeText = time.format(Math.floor(hours), "hours")
+		timeText = time.format(Math.ceil(hours), "hours")
 	} else if (days > -7) {
-		timeText = time.format(Math.floor(days), "days")
+		timeText = time.format(Math.ceil(days), "days")
 	} else {
 		timeText = new Date(cheep.time).toLocaleString(undefined, {
 			day: "numeric",
